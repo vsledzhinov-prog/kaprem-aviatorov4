@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>КапРем · Дашборд обследования — ул. Авиаторов, д. 4</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --orange:#94785B; --cyan:#5B7B8A; --green:#6F8B6E; --purple:#7C6F9C;
+  --ink:#1E293B; --slate:#64748B; --hair:#E2E8F0; --light:#F4F5F7; --paper:#FFFFFF;
+  /* статусы */
+  --s0:#6F8B6E; --s1:#C9A227; --s2:#D64545; --s3:#E0A93B; --s4:#3B78C0; --s5:#B8C0CC;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Golos Text',sans-serif;background:#EEF0F3;color:var(--ink);padding:28px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto}
+header{margin-bottom:24px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:2px;color:var(--orange);text-transform:uppercase;margin-bottom:8px}
+h1{font-family:'Unbounded',sans-serif;font-weight:900;font-size:30px;color:var(--ink);letter-spacing:-.5px}
+.sub{color:var(--slate);font-size:15px;margin-top:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}
+.kpi{background:var(--paper);border:1px solid var(--hair);border-radius:14px;padding:20px}
+.kpi .v{font-family:'Unbounded',sans-serif;font-weight:700;font-size:34px;line-height:1}
+.kpi .l{color:var(--slate);font-size:13px;margin-top:8px}
+.kpi .bar{height:4px;border-radius:2px;margin-top:14px;background:var(--hair);overflow:hidden}
+.kpi .bar i{display:block;height:100%}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:var(--paper);border:1px solid var(--hair);border-radius:14px;padding:22px}
+.card h2{font-family:'Unbounded',sans-serif;font-weight:700;font-size:17px;margin-bottom:4px}
+.card .h-sub{color:var(--slate);font-size:13px;margin-bottom:16px}
+.chart-box{position:relative;height:300px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:14px}
+.legend span{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--slate)}
+.legend i{width:13px;height:13px;border-radius:3px;display:inline-block}
+/* шахматка */
+.matrix-card{margin-bottom:16px}
+.matrix{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.entrance h3{font-size:14px;font-weight:600;color:var(--slate);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.floor-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.floor-num{width:26px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--slate)}
+.cell{width:50px;height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:#fff;cursor:default;
+  transition:transform .12s,box-shadow .12s;position:relative}
+.cell:hover{transform:scale(1.12);box-shadow:0 4px 14px rgba(0,0,0,.22);z-index:5}
+.cell.dim{opacity:.18}
+.cell .tip{visibility:hidden;opacity:0;position:absolute;bottom:124%;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;font-family:'Golos Text';font-weight:400;font-size:12px;white-space:nowrap;
+  padding:7px 10px;border-radius:7px;transition:.15s;z-index:20;pointer-events:none}
+.cell .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--ink)}
+.cell:hover .tip{visibility:visible;opacity:1}
+/* индикатор наличия отчёта */
+.cell.has-report{cursor:pointer}
+.cell.has-report::before{content:'';position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;
+  background:#fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.18)}
+.cell.has-report:hover{transform:scale(1.14);box-shadow:0 5px 16px rgba(0,0,0,.28)}
+/* модальное окно */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:100}
+.overlay.show{display:flex}
+.modal{background:var(--paper);border-radius:18px;padding:28px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center}
+.modal .mk{font-family:'Unbounded';font-weight:700;font-size:22px;color:var(--ink)}
+.modal .ms{color:var(--slate);font-size:13px;margin:6px 0 20px}
+.modal .badge{display:inline-block;width:auto;padding:4px 12px;border-radius:20px;font-size:12px;color:#fff;margin-bottom:14px}
+.modal a,.modal button.disabled{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;
+  font-family:'Golos Text';font-weight:600;font-size:15px;padding:13px;border-radius:11px;margin-bottom:10px;transition:.15s;border:none;cursor:pointer;width:100%}
+.modal a.pres{background:var(--orange);color:#fff}
+.modal a.pres:hover{filter:brightness(1.08)}
+.modal a.act{background:var(--cyan);color:#fff}
+.modal a.act:hover{filter:brightness(1.08)}
+.modal button.disabled{background:var(--light);color:#94A3B8;cursor:not-allowed;border:1px dashed var(--hair)}
+.modal .close{background:none;border:none;color:var(--slate);font-size:13px;cursor:pointer;margin-top:6px;padding:6px}
+.modal .close:hover{color:var(--ink)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.filters button{font-family:'Golos Text';font-size:12.5px;border:1px solid var(--hair);background:var(--paper);
+  color:var(--slate);border-radius:20px;padding:6px 13px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:6px}
+.filters button i{width:11px;height:11px;border-radius:3px}
+.filters button:hover{border-color:var(--slate)}
+.filters button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.filters button.active i{outline:2px solid rgba(255,255,255,.4)}
+footer{color:var(--slate);font-size:12px;text-align:center;margin-top:24px}
+@media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">КапРем · Сводка обследования</div>
+  <h1>ул. Авиаторов, д. 4</h1>
+  <div class="sub">1986 года постройки · 136 квартир · 2 подъезда по 17 этажей</div>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Распределение по статусам</h2>
+    <div class="h-sub">Доля квартир в каждой категории обследования</div>
+    <div class="chart-box"><canvas id="pie"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>Статусы по этажам</h2>
+    <div class="h-sub">Количество квартир по этажам (оба подъезда)</div>
+    <div class="chart-box"><canvas id="bars"></canvas></div>
+  </div>
+</div>
+
+<div class="card matrix-card">
+  <h2>Шахматка дома</h2>
+  <div class="h-sub">Наведите на квартиру для деталей · используйте фильтр по статусу</div>
+  <div class="filters" id="filters"></div>
+  <div class="matrix" id="matrix"></div>
+</div>
+
+<footer>KAPREM-APT · Версия 1.0 · Документ сформирован системой КапРем</footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="badge" id="m-badge"></div>
+    <div class="mk" id="m-title">Кв. —</div>
+    <div class="ms" id="m-sub"></div>
+    <a class="pres" id="m-pres" target="_blank" rel="noopener">📊 Открыть презентацию</a>
+    <a class="act" id="m-act" target="_blank" rel="noopener">📄 Открыть акт обследования</a>
+    <button class="close" onclick="closeModal()">Закрыть</button>
+  </div>
+</div>
+
+<script>
+const DATA = [[1, 1, 1, 5], [2, 1, 1, 0], [3, 1, 1, 5], [4, 1, 1, 5], [5, 2, 1, 5], [6, 2, 1, 5], [7, 2, 1, 5], [8, 2, 1, 5], [9, 3, 1, 5], [10, 3, 1, 5], [11, 3, 1, 5], [12, 3, 1, 5], [13, 4, 1, 5], [14, 4, 1, 2], [15, 4, 1, 5], [16, 4, 1, 5], [17, 5, 1, 1], [18, 5, 1, 0], [19, 5, 1, 0], [20, 5, 1, 4], [21, 6, 1, 0], [22, 6, 1, 0], [23, 6, 1, 5], [24, 6, 1, 5], [25, 7, 1, 5], [26, 7, 1, 5], [27, 7, 1, 5], [28, 7, 1, 5], [29, 8, 1, 0], [30, 8, 1, 0], [31, 8, 1, 5], [32, 8, 1, 1], [33, 9, 1, 5], [34, 9, 1, 5], [35, 9, 1, 5], [36, 9, 1, 5], [37, 10, 1, 5], [38, 10, 1, 5], [39, 10, 1, 5], [40, 10, 1, 5], [41, 11, 1, 0], [42, 11, 1, 0], [43, 11, 1, 0], [44, 11, 1, 0], [45, 12, 1, 5], [46, 12, 1, 5], [47, 12, 1, 3], [48, 12, 1, 3], [49, 13, 1, 5], [50, 13, 1, 5], [51, 13, 1, 3], [52, 13, 1, 3], [53, 14, 1, 5], [54, 14, 1, 5], [55, 14, 1, 0], [56, 14, 1, 3], [57, 15, 1, 0], [58, 15, 1, 0], [59, 15, 1, 3], [60, 15, 1, 2], [61, 16, 1, 0], [62, 16, 1, 0], [63, 16, 1, 3], [64, 16, 1, 3], [65, 17, 1, 0], [66, 17, 1, 0], [67, 17, 1, 1], [68, 17, 1, 2], [69, 1, 2, 5], [70, 1, 2, 5], [71, 1, 2, 5], [72, 1, 2, 5], [73, 2, 2, 5], [74, 2, 2, 5], [75, 2, 2, 5], [76, 2, 2, 5], [77, 3, 2, 5], [78, 3, 2, 5], [79, 3, 2, 5], [80, 3, 2, 5], [81, 4, 2, 0], [82, 4, 2, 0], [83, 4, 2, 0], [84, 4, 2, 0], [85, 5, 2, 0], [86, 5, 2, 0], [87, 5, 2, 5], [88, 5, 2, 5], [89, 6, 2, 0], [90, 6, 2, 0], [91, 6, 2, 5], [92, 6, 2, 5], [93, 7, 2, 5], [94, 7, 2, 5], [95, 7, 2, 5], [96, 7, 2, 5], [97, 8, 2, 5], [98, 8, 2, 5], [99, 8, 2, 5], [100, 8, 2, 5], [101, 9, 2, 5], [102, 9, 2, 5], [103, 9, 2, 5], [104, 9, 2, 5], [105, 10, 2, 2], [106, 10, 2, 2], [107, 10, 2, 3], [108, 10, 2, 0], [109, 11, 2, 3], [110, 11, 2, 3], [111, 11, 2, 3], [112, 11, 2, 4], [113, 12, 2, 2], [114, 12, 2, 2], [115, 12, 2, 3], [116, 12, 2, 5], [117, 13, 2, 2], [118, 13, 2, 2], [119, 13, 2, 3], [120, 13, 2, 0], [121, 14, 2, 2], [122, 14, 2, 2], [123, 14, 2, 3], [124, 14, 2, 0], [125, 15, 2, 2], [126, 15, 2, 2], [127, 15, 2, 0], [128, 15, 2, 5], [129, 16, 2, 2], [130, 16, 2, 3], [131, 16, 2, 0], [132, 16, 2, 5], [133, 17, 2, 2], [134, 17, 2, 2], [135, 17, 2, 0], [136, 17, 2, 4]];
+// Карта отчётов: какие квартиры имеют презентацию и акт (относительные пути для GitHub Pages)
+const REPORTS = {"30": {"act": "acts/kv30.pdf"}, "114": {"pres": "reports/kv114.pdf", "act": "acts/kv114.pdf"}, "55": {"act": "acts/kv55.pdf"}, "136": {"act": "acts/kv136.pdf"}, "60": {"pres": "reports/kv60.pdf", "act": "acts/kv60.pdf"}, "126": {"act": "acts/kv126.pdf"}, "32": {"act": "acts/kv32.pdf"}, "125": {"pres": "reports/kv125.pdf", "act": "acts/kv125.pdf"}, "134": {"pres": "reports/kv134.pdf", "act": "acts/kv134.pdf"}, "113": {"pres": "reports/kv113.pdf", "act": "acts/kv113.pdf"}, "106": {"pres": "reports/kv106.pdf", "act": "acts/kv106.pdf"}, "67": {"pres": "reports/kv67.pdf", "act": "acts/kv67.pdf"}, "133": {"pres": "reports/kv133.pdf", "act": "acts/kv133.pdf"}, "121": {"pres": "reports/kv121.pdf", "act": "acts/kv121.pdf"}, "122": {"pres": "reports/kv122.pdf", "act": "acts/kv122.pdf"}, "129": {"pres": "reports/kv129.pdf", "act": "acts/kv129.pdf"}, "128": {"act": "acts/kv128.pdf"}, "105": {"pres": "reports/kv105.pdf", "act": "acts/kv105.pdf"}, "135": {"act": "acts/kv135.pdf"}, "68": {"pres": "reports/kv68.pdf", "act": "acts/kv68.pdf"}, "131": {"act": "acts/kv131.pdf"}, "118": {"pres": "reports/kv118.pdf", "act": "acts/kv118.pdf"}, "2": {"act": "acts/kv2.pdf"}, "127": {"act": "acts/kv127.pdf"}, "117": {"pres": "reports/kv117.pdf", "act": "acts/kv117.pdf"}, "14": {"pres": "reports/kv14.pdf", "act": "acts/kv14.pdf"}, "17": {"act": "acts/kv17.pdf"}, "124": {"pres": "reports/kv124.pdf", "act": "acts/kv124.pdf"}, "120": {"act": "acts/kv120.pdf"}};
+const STATUSES = [
+  {name:'Доступ есть, повреждений нет', color:getComputedStyle(document.documentElement).getPropertyValue('--s0').trim()},
+  {name:'Доступ есть, незначительные повреждения', color:getComputedStyle(document.documentElement).getPropertyValue('--s1').trim()},
+  {name:'Ущерб от пожара / залития', color:getComputedStyle(document.documentElement).getPropertyValue('--s2').trim()},
+  {name:'Возможны повреждения (доступа нет)', color:getComputedStyle(document.documentElement).getPropertyValue('--s3').trim()},
+  {name:'Со слов жителей ущерба нет (доступа нет)', color:getComputedStyle(document.documentElement).getPropertyValue('--s4').trim()},
+  {name:'Доступа нет', color:getComputedStyle(document.documentElement).getPropertyValue('--s5').trim()},
+];
+const total = DATA.length;
+const counts = STATUSES.map((_,i)=>DATA.filter(d=>d[3]===i).length);
+
+// ---- KPI ----
+const accessYes = DATA.filter(d=>d[3]===0||d[3]===1).length;
+const damaged   = DATA.filter(d=>d[3]===1||d[3]===2||d[3]===3).length;
+const noAccess  = DATA.filter(d=>d[3]===4||d[3]===5).length;
+const kpis=[
+  {v:total, l:'Всего квартир', c:'var(--ink)', pct:100},
+  {v:accessYes, l:'Доступ предоставлен', c:'var(--green)', pct:Math.round(accessYes/total*100)},
+  {v:damaged, l:'С повреждениями / риском', c:'var(--s2)', pct:Math.round(damaged/total*100)},
+  {v:noAccess, l:'Доступ не предоставлен', c:'var(--s5)', pct:Math.round(noAccess/total*100)},
+];
+document.getElementById('kpis').innerHTML = kpis.map(k=>`
+  <div class="kpi">
+    <div class="v" style="color:${k.c}">${k.v}</div>
+    <div class="l">${k.l}</div>
+    <div class="bar"><i style="width:${k.pct}%;background:${k.c}"></i></div>
+  </div>`).join('');
+
+// ---- Pie ----
+if(window.Chart){ try{
+new Chart(document.getElementById('pie'),{
+  type:'doughnut',
+  data:{labels:STATUSES.map(s=>s.name),datasets:[{data:counts,backgroundColor:STATUSES.map(s=>s.color),borderWidth:2,borderColor:'#fff'}]},
+  options:{plugins:{legend:{position:'bottom',labels:{font:{family:'Golos Text',size:12},padding:12,boxWidth:13,usePointStyle:true,pointStyle:'rectRounded'}},
+    tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} кв. (${Math.round(c.raw/total*100)}%)`}}},
+    cutout:'58%',responsive:true,maintainAspectRatio:false}
+});
+
+// ---- Bars by floor ----
+const floors=[...Array(17)].map((_,i)=>i+1);
+const byFloor = STATUSES.map((s,si)=>floors.map(f=>DATA.filter(d=>d[1]===f&&d[3]===si).length));
+new Chart(document.getElementById('bars'),{
+  type:'bar',
+  data:{labels:floors.map(f=>f+' эт'),datasets:STATUSES.map((s,si)=>({label:s.name,data:byFloor[si],backgroundColor:s.color}))},
+  options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}`}}},
+    responsive:true,maintainAspectRatio:false,
+    scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'JetBrains Mono',size:10}}},
+            y:{stacked:true,beginAtZero:true,ticks:{stepSize:2,font:{family:'JetBrains Mono',size:10}},grid:{color:'#EEF0F3'}}}}
+});
+}catch(e){console.error('charts',e);} }
+
+// ---- Matrix ----
+let activeFilter=-1;
+function buildMatrix(){
+  const m=document.getElementById('matrix'); m.innerHTML='';
+  [1,2].forEach(ent=>{
+    const col=document.createElement('div'); col.className='entrance';
+    col.innerHTML=`<h3>Подъезд ${ent}</h3>`;
+    for(let f=17;f>=1;f--){
+      const row=document.createElement('div'); row.className='floor-row';
+      row.innerHTML=`<div class="floor-num">${f}</div>`;
+      const cells=DATA.filter(d=>d[2]===ent&&d[1]===f).sort((a,b)=>a[0]-b[0]);
+      cells.forEach(d=>{
+        const st=STATUSES[d[3]];
+        const cell=document.createElement('div');
+        const rep=REPORTS[d[0]];
+        cell.className='cell'+(activeFilter>=0&&d[3]!==activeFilter?' dim':'')+(rep?' has-report':'');
+        cell.style.background=st.color;
+        const tipExtra = rep ? '<br><span style="color:#A5D6A7">● есть отчёт — нажмите</span>' : '';
+        cell.innerHTML=`${d[0]}<span class="tip"><b>Кв. ${d[0]}</b> · ${f} этаж<br>${st.name}${tipExtra}</span>`;
+        if(rep) cell.onclick=()=>openModal(d[0],f,d[3]);
+        row.appendChild(cell);
+      });
+      col.appendChild(row);
+    }
+    m.appendChild(col);
+  });
+}
+buildMatrix();
+
+// ---- Filters ----
+const fbox=document.getElementById('filters');
+const allBtn=document.createElement('button');
+allBtn.className='active'; allBtn.textContent='Все статусы';
+allBtn.onclick=()=>{activeFilter=-1;setActive(allBtn);buildMatrix();};
+fbox.appendChild(allBtn);
+STATUSES.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.innerHTML=`<i style="background:${s.color}"></i>${s.name} (${counts[i]})`;
+  b.onclick=()=>{activeFilter=i;setActive(b);buildMatrix();};
+  fbox.appendChild(b);
+});
+function setActive(btn){Array.from(fbox.children).forEach(c=>c.classList.remove('active'));btn.classList.add('active');}
+
+// ---- Модальное окно отчёта ----
+const overlay=document.getElementById('overlay');
+function openModal(kv,floor,statusIdx){
+  const rep=REPORTS[kv]; if(!rep) return;
+  const st=STATUSES[statusIdx];
+  document.getElementById('m-title').textContent=`Кв. ${kv} · ${floor} этаж`;
+  document.getElementById('m-sub').textContent='ул. Авиаторов, д. 4';
+  const badge=document.getElementById('m-badge');
+  badge.textContent=st.name; badge.style.background=st.color;
+  const pres=document.getElementById('m-pres');
+  const act=document.getElementById('m-act');
+  if(rep.pres){pres.href=rep.pres;pres.style.display='flex';}else{pres.style.display='none';}
+  if(rep.act){act.className='act';act.href=rep.act;act.removeAttribute('aria-disabled');act.style.pointerEvents='auto';act.textContent='📄 Открыть акт обследования';act.style.display='flex';}
+  else{act.style.display='flex';act.className='act';act.style.background='var(--light)';act.style.color='#94A3B8';act.style.pointerEvents='none';act.removeAttribute('href');act.textContent='📄 Акт не приложен';}
+  overlay.classList.add('show');
+}
+function closeModal(){overlay.classList.remove('show');}
+overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+</script>
+</body>
+</html>
